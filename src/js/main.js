@@ -1,4 +1,5 @@
 import { simulateSpinup } from './physics.js';
+import { init3DViewer } from './stlViewer.js';
 import Chart from 'chart.js/auto';
 
 // --- Constants & Config ---
@@ -45,6 +46,7 @@ const outputIds = {
 // --- Initialization ---
 document.addEventListener('DOMContentLoaded', () => {
     initCharts();
+    init3DViewer('stl-container');
     setupEventListeners();
 });
 
