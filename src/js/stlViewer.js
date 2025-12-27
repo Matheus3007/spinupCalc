@@ -238,7 +238,7 @@ function loadSTLCallback(data) {
     fitCameraToMesh(mesh);
 
     // Initial Physics Calc (Default Axis Y - assumes flat import)
-    calculatePhysics(geometry, spinAxis);
+    calculatePhysics(geometry, currentSpinAxis);
 }
 
 function calculatePhysics(geometry, axis) {
@@ -268,6 +268,25 @@ function calculatePhysics(geometry, axis) {
     // Update STL UI Inertia (Read-only)
     const stlInertiaInput = document.getElementById('stlInertia');
     if (stlInertiaInput) stlInertiaInput.value = I_kgm2.toExponential(4);
+
+    // --- AUTO APPLY TO MAIN INPUTS ---
+    // Previously we demanded a click. Now we just do it.
+    const mainMassInput = document.getElementById('mass');
+    const mainInertiaInput = document.getElementById('inertia');
+    const applyBtn = document.getElementById('btn-apply-stl');
+
+    if (mainMassInput && stlMassInput.value !== '-') {
+        mainMassInput.value = stlMassInput.value;
+    }
+    if (mainInertiaInput && stlInertiaInput.value !== '-') {
+        mainInertiaInput.value = stlInertiaInput.value;
+    }
+
+    // Update Button Text temporarily to show it happened (User feedback)
+    if (applyBtn) {
+        applyBtn.innerText = "Auto-Applied!";
+        setTimeout(() => applyBtn.innerText = "Apply to Physics Inputs", 2000);
+    }
 }
 
 function getVolume(geometry) {

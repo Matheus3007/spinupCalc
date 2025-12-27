@@ -133,6 +133,23 @@
 
             <button id="btn-add">Run Simulation</button>
             <button id="btn-clear" class="secondary">Clear Charts</button>
+
+            <div class="group-title" style="margin-top: 20px; border-color: #0088FF; color: #0088FF;">Batch Tools</div>
+            <div class="control-group">
+                <div style="display: flex; gap: 5px;">
+                    <button id="btn-template" class="secondary btn-batch" style="font-size: 0.7rem;">
+                        Get Template
+                    </button>
+                    <input type="file" id="csvFile" accept=".csv" style="display: none;">
+                    <button id="btn-upload-csv" class="secondary btn-batch" style="font-size: 0.7rem;">
+                        Upload CSV
+                    </button>
+                </div>
+                <button id="btn-export" class="secondary btn-batch" disabled
+                    style="font-size: 0.7rem; margin-top: 5px;">
+                    Export Results (.csv)
+                </button>
+            </div>
         </aside>
 
         <!-- RIGHT COLUMN: RESULTS -->

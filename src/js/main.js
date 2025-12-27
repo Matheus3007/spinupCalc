@@ -102,14 +102,28 @@ function initCharts() {
     });
 }
 
+const BATCH_HEADERS = [
+    'Name', 'KV', 'Voltage', 'Resistance', 'ESC_Limit', 'Reduction', 'Efficiency',
+    'R_Long', 'R_Short', 'Height', 'Drag_Coeff', 'Inertia', 'Mass', 'Viscous_Friction'
+];
+
+const BATCH_KEYS = [
+    'simName', 'kv', 'voltage', 'resistance', 'escLimit', 'reduction', 'efficiency',
+    'rLong', 'rShort', 'height', 'cd', 'inertia', 'mass', 'viscous'
+];
+
+let batchResults = [];
+
 function setupEventListeners() {
     document.getElementById('btn-add').addEventListener('click', runSimulation);
     document.getElementById('btn-clear').addEventListener('click', clearCharts);
 
-    // Auto-estimate inertia when parameters change (if inertia is 0 or user specifically requests?)
-    // For now, let's keep it simple: Calculate Only when running simulation if 0, 
-    // OR we could add a helper button. The requirements said "System must calculate... if inertia = 0".
-    // We handle that in runSimulation usually, but updating the Input UI is nice.
+    // Batch Tools
+    document.getElementById('btn-template').addEventListener('click', downloadTemplate);
+    const csvInput = document.getElementById('csvFile');
+    document.getElementById('btn-upload-csv').addEventListener('click', () => csvInput.click());
+    csvInput.addEventListener('change', handleBatchUpload);
+    document.getElementById('btn-export').addEventListener('click', exportBatchResults);
 
     // Track if user edits the name manually
     inputs.simName.addEventListener('input', () => {
@@ -251,12 +265,161 @@ function addData(chart, label, timeData, valueData, color) {
     chart.update();
 }
 
+
+
+function downloadTemplate() {
+    const csvContent = BATCH_HEADERS.join(',') + '\n' +
+        'Example Motor,900,16.8,0.05,50,1,90,150,50,10,1.2,0,400,0'; // Example row
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'spinup_template.csv';
+    a.click();
+    window.URL.revokeObjectURL(url);
+}
+
+function handleBatchUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function (e) {
+        const text = e.target.result;
+        processBatchCSV(text);
+        // Reset input so same file can be selected again
+        event.target.value = '';
+    };
+    reader.readAsText(file);
+}
+
+function processBatchCSV(csvText) {
+    const lines = csvText.split(/\r\n|\n/);
+    // Remove header
+    const dataLines = lines.slice(1).filter(l => l.trim().length > 0);
+
+    // Clear existing batch results if we treat this as a fresh session?
+    // User said "instantly plot", implies adding to current view or replacing. 
+    // Usually batch implies "here is my set". Let's clear previous batch context but keep existing manual runs?
+    // User said "test various motors... plot them instantly".
+    // Let's NOT clear automatically, but ensure we add to batchResults array.
+
+    // Actually, good UX: reset batchResults array for THIS upload, but append to chart.
+    batchResults = [];
+    document.getElementById('btn-export').disabled = false;
+
+    dataLines.forEach(line => {
+        const cols = line.split(',');
+        if (cols.length < BATCH_KEYS.length) return; // Skip malformed
+
+        // Construct params object
+        const rawValues = {};
+        BATCH_KEYS.forEach((key, idx) => {
+            rawValues[key] = cols[idx].trim();
+        });
+
+        // 1. Map to Simulation Params (Parsing Strings to Floats)
+        const params = {
+            kv: parseFloat(rawValues.kv),
+            voltage: parseFloat(rawValues.voltage),
+            resistance: parseFloat(rawValues.resistance),
+            escLimit: parseFloat(rawValues.escLimit),
+            reduction: parseFloat(rawValues.reduction),
+            efficiency: parseFloat(rawValues.efficiency) / 100,
+            rLong: parseFloat(rawValues.rLong) / 1000,
+            rShort: parseFloat(rawValues.rShort) / 1000,
+            height: parseFloat(rawValues.height) / 1000,
+            cd: parseFloat(rawValues.cd),
+            viscousFriction: parseFloat(rawValues.viscous) || 0,
+            inertia: parseFloat(rawValues.inertia) || 0
+        };
+
+        const massVal = parseFloat(rawValues.mass); // For estimation if needed
+
+        // Inertia Auto-Est Logic (Same as runSimulation)
+        if (params.inertia === 0 && massVal > 0) {
+            const massKg = massVal / 1000;
+            const rLong = params.rLong;
+            const rShort = params.rShort;
+            const totalLen = rLong + rShort;
+            const mLong = massKg * (rLong / totalLen);
+            const mShort = massKg * (rShort / totalLen);
+            params.inertia = (1 / 3 * mLong * Math.pow(rLong, 2)) + (1 / 3 * mShort * Math.pow(rShort, 2));
+        }
+
+        // 2. Run Sim
+        const results = simulateSpinup(params);
+
+        // 3. Add to Charts
+        const color = COLORS[colorIdx % COLORS.length];
+        colorIdx++;
+        addData(rpmChart, rawValues.simName, results.timeData, results.rpmData, color);
+        addData(currentChart, rawValues.simName, results.timeData, results.currentData, color);
+
+        // 4. Store Result for Export (Merge Raw Inputs + KPI Outputs)
+        batchResults.push({
+            ...rawValues,
+            // Add KPIs
+            res_max_rpm: results.stats.rpm,
+            res_time: results.stats.time,
+            res_tip_speed: results.stats.tipSpeed,
+            res_current: results.stats.current
+        });
+    });
+
+    // Update KPI display to the last one? Or leave as is?
+    // Probably leave manual KPIs alone or show the last one processed.
+}
+
+function exportBatchResults() {
+    if (batchResults.length === 0) return;
+
+    // Headers: Inputs + Outputs
+    const exportHeaders = [...BATCH_HEADERS, 'Max_RPM', 'Spinup_Time', 'Tip_Speed', 'Hover_Current'];
+    const headerRow = exportHeaders.join(',');
+
+    const rows = batchResults.map(res => {
+        return exportHeaders.map(header => {
+            // Map header Name back to key? 
+            // We need a map.
+            // Simplified: We constructed batchResults with keys matching BATCH_KEYS + res_...
+            // Let's verify mapping.
+
+            // Map BATCH_HEADERS index to key
+            const inputIdx = BATCH_HEADERS.indexOf(header);
+            if (inputIdx !== -1) {
+                return res[BATCH_KEYS[inputIdx]];
+            }
+            // Outputs
+            switch (header) {
+                case 'Max_RPM': return res.res_max_rpm;
+                case 'Spinup_Time': return res.res_time;
+                case 'Tip_Speed': return res.res_tip_speed;
+                case 'Hover_Current': return res.res_current;
+                default: return '';
+            }
+        }).join(',');
+    });
+
+    const csvContent = headerRow + '\n' + rows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'spinup_results.csv';
+    a.click();
+    window.URL.revokeObjectURL(url);
+}
+
 function clearCharts() {
     rpmChart.data.datasets = [];
     rpmChart.update();
     currentChart.data.datasets = [];
     currentChart.update();
     colorIdx = 0;
+    batchResults = [];
+    document.getElementById('btn-export').disabled = true;
 
     // Reset KPIs
     updateKPIs({
