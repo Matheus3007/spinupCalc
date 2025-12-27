@@ -452,4 +452,31 @@ button.secondary:hover {
         border-right: none;
         border-bottom: 2px solid var(--border);
     }
+
+    /* Mobile Chart Handling */
+    .app-container {
+        height: auto;
+        /* Allow scrolling on mobile */
+        overflow: auto;
+    }
+
+    body {
+        overflow: auto;
+        /* Enable scroll on body for mobile */
+        height: auto;
+    }
+
+    .charts-container {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        min-height: 600px;
+        /* Force space */
+    }
+
+    .chart-wrapper {
+        min-height: 400px;
+        /* Make charts tall on mobile */
+        height: 400px;
+    }
 }
