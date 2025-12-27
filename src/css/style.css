@@ -1,0 +1,363 @@
+:root {
+    --bg-color: #050505;
+    --panel-bg: #0a0a0a;
+    --text-primary: #e0e0e0;
+    --text-secondary: #777;
+    --accent: #00FF00;
+    /* Neon Green */
+    --accent-dim: #003300;
+    --border: #444;
+    --border-active: #00FF00;
+    --input-bg: #000;
+
+    --font-main: 'Courier New', Courier, monospace;
+    /* Brutalist/Raw */
+    --font-ui: 'Consolas', 'Monaco', monospace;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-main);
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    overflow: hidden;
+    letter-spacing: -0.5px;
+}
+
+.app-container {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    height: 100vh;
+    border: 1px solid #111;
+}
+
+/* Sidebar (Controls) */
+.sidebar {
+    background-color: var(--panel-bg);
+    border-right: 2px solid var(--border);
+    padding: 15px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.brand {
+    font-family: var(--font-ui);
+    font-size: 1.4rem;
+    font-weight: 900;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    border-bottom: 2px solid var(--accent);
+    padding-bottom: 10px;
+    margin-bottom: 5px;
+    text-shadow: 0 0 5px rgba(0, 255, 0, 0.4);
+}
+
+.stl-preview-placeholder {
+    width: 100%;
+    height: 120px;
+    background: repeating-linear-gradient(45deg,
+            #000,
+            #000 10px,
+            #111 10px,
+            #111 20px);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    box-shadow: inset 0 0 20px #000;
+}
+
+.group-title {
+    color: var(--border-active);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    font-weight: bold;
+    margin-bottom: 5px;
+    border-left: 3px solid var(--border-active);
+    padding-left: 8px;
+    background: linear-gradient(90deg, var(--accent-dim), transparent);
+}
+
+.control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.input-row {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    /* Gap handled by margin in pseudo element */
+    width: 100%;
+}
+
+.input-row label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    text-align: left;
+    /* Left align text */
+    flex-grow: 1;
+    /* Grow to fill space */
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+}
+
+/* THE BRUTALIST CONNECTOR */
+.input-row label::after {
+    content: "";
+    flex-grow: 1;
+    border-bottom: 2px dashed var(--border);
+    margin: 0 10px;
+    opacity: 0.5;
+}
+
+/* EDGY INPUTS */
+input,
+select {
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    color: var(--accent);
+    padding: 6px;
+    font-family: var(--font-ui);
+    font-size: 0.9rem;
+    font-weight: bold;
+    border-radius: 0;
+    /* NO ROUNDED CORNERS */
+    appearance: none;
+    /* Kill default browser styling */
+    -webkit-appearance: none;
+    text-align: right;
+    transition: all 0.1s;
+    width: 90px;
+    /* Fixed width for consistency */
+}
+
+input:focus,
+select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 8px rgba(0, 255, 0, 0.3);
+    background: #051a05;
+}
+
+/* Custom Select Arrow Hack if needed, or just leave it raw/stark. 
+   Since we removed appearance, selects show no arrow. Let's add a visual cue. */
+select {
+    background-image: linear-gradient(45deg, transparent 50%, var(--accent) 50%),
+        linear-gradient(135deg, var(--accent) 50%, transparent 50%);
+    background-position: calc(100% - 12px) calc(50%),
+        calc(100% - 7px) calc(50%);
+    background-size: 5px 5px,
+        5px 5px;
+    background-repeat: no-repeat;
+    padding-right: 20px;
+}
+
+/* CROSS BROWSER SPINNER HIDING */
+input[type=number] {
+    -moz-appearance: textfield;
+    /* Firefox */
+}
+
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+button {
+    background: #000;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    padding: 14px 5px;
+    /* Increased padding */
+    width: 100%;
+    cursor: pointer;
+    text-transform: uppercase;
+    font-weight: 900;
+    font-family: var(--font-ui);
+    letter-spacing: 0px;
+    /* Reduced tracking */
+    font-size: 0.9rem;
+    /* Slightly smaller font */
+    line-height: 1.2;
+    /* Explicit line-height to prevent weird browser defaults */
+    min-height: 48px;
+    /* Ensure minimum touch target size */
+    display: flex;
+    /* Use flex to center text vertically safely */
+    align-items: center;
+    justify-content: center;
+    transition: all 0.1s;
+    border-radius: 0;
+    position: relative;
+    overflow: hidden;
+    white-space: nowrap;
+    /* Prevent wrapping */
+}
+
+button:hover {
+    background: var(--accent);
+    color: #000;
+    box-shadow: 0 0 15px rgba(0, 255, 0, 0.6);
+}
+
+button:active {
+    transform: translateY(2px);
+}
+
+button::before {
+    /* Corner cut effect */
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    border-top: 5px solid var(--accent);
+    border-right: 5px solid transparent;
+}
+
+button.secondary {
+    border-color: #555;
+    color: #888;
+}
+
+button.secondary:hover {
+    border-color: #fff;
+    color: #fff;
+    background: #222;
+    box-shadow: none;
+}
+
+/* Main Content */
+.main-content {
+    background-image:
+        linear-gradient(rgba(10, 10, 10, 0.9), rgba(10, 10, 10, 0.9)),
+        url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23111' fill-opacity='1' fill-rule='evenodd'%3E%3Cpath d='M0 40L40 0H20L0 20M40 40V20L20 40'/%3E%3C/g%3E%3C/svg%3E");
+    padding: 20px;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    gap: 20px;
+    overflow-y: auto;
+}
+
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+}
+
+.kpi-card {
+    background: rgba(0, 0, 0, 0.8);
+    border: 1px solid var(--border);
+    padding: 15px;
+    position: relative;
+    border-left: 4px solid var(--border);
+}
+
+/* KPI Card Active Highlight effect */
+.kpi-card:hover {
+    border-color: var(--accent);
+    border-left-color: var(--accent);
+}
+
+.kpi-value {
+    font-size: 2rem;
+    color: #fff;
+    font-family: var(--font-ui);
+    font-weight: bold;
+    text-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+}
+
+.kpi-label {
+    font-size: 0.65rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 5px;
+}
+
+.charts-container {
+    display: grid;
+    grid-template-rows: 1fr 1fr;
+    gap: 15px;
+}
+
+.chart-wrapper {
+    background: #000;
+    border: 1px solid var(--border);
+    padding: 10px;
+    position: relative;
+}
+
+.chart-wrapper::after {
+    /* Tech Overlay corner */
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 20px;
+    height: 20px;
+    border-top: 2px solid var(--accent);
+    border-right: 2px solid var(--accent);
+}
+
+/* Scrollbar - Global & Specific */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent) #000;
+}
+
+::-webkit-scrollbar {
+    width: 2px;
+    height: 2px;
+    background: #000;
+}
+
+::-webkit-scrollbar-track {
+    background: #000;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--accent);
+    /* Flat Green */
+    border-radius: 0 !important;
+    /* Force Sharp */
+    border: none;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #00FF00;
+    box-shadow: 0 0 5px var(--accent);
+    /* Glow on hover */
+}
+
+@media (max-width: 900px) {
+    .app-container {
+        grid-template-columns: 1fr;
+    }
+
+    .kpi-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .sidebar {
+        border-right: none;
+        border-bottom: 2px solid var(--border);
+    }
+}

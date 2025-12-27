@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpinupCalc // Advanced Physics</title>
+    <link rel="stylesheet" href="./src/css/style.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- LEFT COLUMN: INPUTS -->
+        <aside class="sidebar">
+            <div class="brand">Spinup // Calc</div>
+
+            <div class="stl-preview-placeholder">
+                [ STL VISUALIZER 3D ]<br>
+                (Coming Soon)
+            </div>
+
+            <div class="input-row">
+                <label>Scenario Name</label>
+                <input type="text" id="simName" value="Setup Standard">
+            </div>
+
+            <div class="group-title">Motors & Electronics</div>
+            <div class="control-group">
+                <div class="input-row">
+                    <label>Motor KV</label>
+                    <input type="number" id="kv" value="880">
+                </div>
+                <div class="input-row">
+                    <label>Battery (V)</label>
+                    <input type="number" id="voltage" value="14.8" step="0.1">
+                </div>
+                <div class="input-row">
+                    <label>Resistance (&Omega;)</label>
+                    <input type="number" id="resistance" value="0.045" step="0.001">
+                </div>
+                <div class="input-row">
+                    <label>ESC Limit (A)</label>
+                    <input type="number" id="escLimit" value="60">
+                </div>
+            </div>
+
+            <div class="group-title">Transmission</div>
+            <div class="control-group">
+                <div class="input-row">
+                    <label>Ratio (X:1)</label>
+                    <input type="number" id="reduction" value="1.0" step="0.1">
+                </div>
+                <div class="input-row">
+                    <label>Efficiency (%)</label>
+                    <input type="number" id="efficiency" value="90">
+                </div>
+            </div>
+
+            <div class="group-title">Weapon Geometry</div>
+            <div class="control-group">
+                <div class="input-row">
+                    <label>Long Radius (mm)</label>
+                    <input type="number" id="rLong" value="170">
+                </div>
+                <div class="input-row">
+                    <label>Short Radius (mm)</label>
+                    <input type="number" id="rShort" value="80">
+                </div>
+                <div class="input-row">
+                    <label>Height/Thick (mm)</label>
+                    <input type="number" id="height" value="15">
+                </div>
+                <div class="input-row">
+                    <label>Drag Coeff (Cd)</label>
+                    <input type="number" id="dragCoeff" value="1.2">
+                </div>
+            </div>
+
+            <div class="group-title">Physics Advanced</div>
+            <div class="control-group">
+                <div class="input-row">
+                    <label>Inertia (kg&middot;m&sup2;) [0=Auto]</label>
+                    <input type="number" id="inertia" value="0" step="0.0001">
+                </div>
+                <div class="input-row">
+                    <label>Mass (g) [For Estimation]</label>
+                    <input type="number" id="mass" value="450">
+                </div>
+                <div class="input-row">
+                    <label>Viscous Friction (B)</label>
+                    <input type="number" id="viscous" value="0.0000" step="0.0001" title="Coefficient for B*w friction">
+                </div>
+            </div>
+
+            <button id="btn-add">Run Simulation</button>
+            <button id="btn-clear" class="secondary">Clear Charts</button>
+        </aside>
+
+        <!-- RIGHT COLUMN: RESULTS -->
+        <main class="main-content">
+            <!-- KPIs -->
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-value" id="resRpmMax">0</div>
+                    <div class="kpi-label">Max RPM</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-value" id="resTime">0s</div>
+                    <div class="kpi-label">Spin-up Time</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-value" id="resTipSpeed">0</div>
+                    <div class="kpi-label">Tip Speed (m/s)</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-value" id="resCurrent">0</div>
+                    <div class="kpi-label">Hover Current (A)</div>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="charts-container">
+                <div class="chart-wrapper">
+                    <canvas id="spinupChart"></canvas>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="currentChart"></canvas>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- MAIN SCRIPT -->
+    <script type="module" src="/src/js/main.js"></script>
+</body>
+
+</html>
