@@ -27,10 +27,17 @@ const inputs = {
     escLimit: document.getElementById('escLimit'),
     reduction: document.getElementById('reduction'),
     efficiency: document.getElementById('efficiency'),
+
+    // Weapon Geo
+    weaponType: document.getElementById('weaponType'),
     rLong: document.getElementById('rLong'),
     rShort: document.getElementById('rShort'),
+    rStart: document.getElementById('rStart'),       // NEW
+    nTeeth: document.getElementById('nTeeth'),       // NEW
+    wallThickness: document.getElementById('wallThickness'), // NEW
     height: document.getElementById('height'),
-    cd: document.getElementById('dragCoeff'), // Changed from 'cd' to 'dragCoeff' to match user edit
+    cd: document.getElementById('dragCoeff'),
+
     viscous: document.getElementById('viscous'),
     mass: document.getElementById('mass'),
     inertia: document.getElementById('inertia'),
@@ -104,12 +111,14 @@ function initCharts() {
 
 const BATCH_HEADERS = [
     'Name', 'KV', 'Voltage', 'Resistance', 'ESC_Limit', 'Reduction', 'Efficiency',
-    'R_Long', 'R_Short', 'Height', 'Drag_Coeff', 'Inertia', 'Mass', 'Viscous_Friction'
+    'Type', 'R_Long', 'R_Start', 'R_Short', 'N_Teeth', 'Wall_Thick', 'Height', 'Drag_Coeff',
+    'Inertia', 'Mass', 'Viscous_Friction'
 ];
 
 const BATCH_KEYS = [
     'simName', 'kv', 'voltage', 'resistance', 'escLimit', 'reduction', 'efficiency',
-    'rLong', 'rShort', 'height', 'cd', 'inertia', 'mass', 'viscous'
+    'weaponType', 'rLong', 'rStart', 'rShort', 'nTeeth', 'wallThickness', 'height', 'cd',
+    'inertia', 'mass', 'viscous'
 ];
 
 let batchResults = [];
@@ -125,10 +134,42 @@ function setupEventListeners() {
     csvInput.addEventListener('change', handleBatchUpload);
     document.getElementById('btn-export').addEventListener('click', exportBatchResults);
 
+    // Weapon Type Toggle
+    inputs.weaponType.addEventListener('change', handleWeaponTypeChange);
+    handleWeaponTypeChange(); // Init state
+
     // Track if user edits the name manually
     inputs.simName.addEventListener('input', () => {
         userEditedName = true;
     });
+}
+
+function handleWeaponTypeChange() {
+    const type = inputs.weaponType.value;
+    const rShortRow = document.getElementById('row-rShort');
+    const rStartRow = document.getElementById('row-rStart');
+    const nTeethRow = document.getElementById('row-nTeeth');
+    const wallRow = document.getElementById('row-wallThick');
+
+    // Reset defaults first
+    rShortRow.style.display = 'none';
+    rStartRow.style.display = 'none';
+    nTeethRow.style.display = 'none';
+    wallRow.style.display = 'none';
+
+    if (type === 'barAsym') {
+        rShortRow.style.display = 'flex';
+    } else if (type === 'barSym') {
+        nTeethRow.style.display = 'flex';
+    } else if (type === 'drum') {
+        rStartRow.style.display = 'flex';
+        nTeethRow.style.display = 'flex';
+        // Drum implies shell + hubs. Do we need teeth? Usually not for simple drum drag calc.
+    } else if (type === 'eggbeater') {
+        rStartRow.style.display = 'flex';
+        nTeethRow.style.display = 'flex';
+        wallRow.style.display = 'flex';
+    }
 }
 
 let userEditedName = false;
@@ -146,27 +187,41 @@ function runSimulation() {
         escLimit: getVal('escLimit'),
         reduction: getVal('reduction'),
         efficiency: getVal('efficiency') / 100, // % to 0-1
+
+        // Geometry
+        weaponType: inputs.weaponType.value,
         rLong: getVal('rLong') / 1000,          // mm to m
         rShort: getVal('rShort') / 1000,        // mm to m
+        rStart: getVal('rStart') / 1000,        // mm to m
+        nTeeth: getVal('nTeeth'),
+        wallThickness: getVal('wallThickness') / 1000, // mm to m
         height: getVal('height') / 1000,        // mm to m
         cd: getVal('cd'),
+
         viscousFriction: getVal('viscous'),
         inertia: getVal('inertia')
     };
 
     // Inertia Estimation Logic (UI Update)
     if (params.inertia === 0) {
+        let estimatedInertia = 0;
         const massKg = getVal('mass') / 1000;
-        const rLong = params.rLong;
-        const rShort = params.rShort;
 
-        // Distribute mass proportional to length (Simplified)
-        const totalLen = rLong + rShort;
-        const mLong = massKg * (rLong / totalLen);
-        const mShort = massKg * (rShort / totalLen);
-
-        // I = 1/3 * m * L^2
-        const estimatedInertia = (1 / 3 * mLong * Math.pow(rLong, 2)) + (1 / 3 * mShort * Math.pow(rShort, 2));
+        if (params.weaponType === 'barAsym' || params.weaponType === 'barSym') {
+            const rLong = params.rLong;
+            const rShort = params.rShort; // For Asym
+            // Simple rod approx
+            const totalLen = rLong + rShort;
+            const mLong = massKg * (rLong / totalLen);
+            const mShort = massKg * (rShort / totalLen);
+            estimatedInertia = (1 / 3 * mLong * Math.pow(rLong, 2)) + (1 / 3 * mShort * Math.pow(rShort, 2));
+        } else if (params.weaponType === 'drum' || params.weaponType === 'eggbeater') {
+            // Hollow Cylinder approx I = 1/2 * m * (r1^2 + r2^2)
+            // r1 = rStart, r2 = rLong
+            const r1 = params.rStart;
+            const r2 = params.rLong;
+            estimatedInertia = 0.5 * massKg * (Math.pow(r1, 2) + Math.pow(r2, 2));
+        }
 
         params.inertia = estimatedInertia; // Update for sim
         inputs.inertia.value = estimatedInertia.toExponential(4); // Update UI
@@ -269,7 +324,7 @@ function addData(chart, label, timeData, valueData, color) {
 
 function downloadTemplate() {
     const csvContent = BATCH_HEADERS.join(',') + '\n' +
-        'Example Motor,900,16.8,0.05,50,1,90,150,50,10,1.2,0,400,0'; // Example row
+        'Example Motor,900,16.8,0.05,50,1,90,barAsym,150,0,50,2,0,10,1.2,0,400,0'; // Example row
 
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
@@ -327,10 +382,16 @@ function processBatchCSV(csvText) {
             escLimit: parseFloat(rawValues.escLimit),
             reduction: parseFloat(rawValues.reduction),
             efficiency: parseFloat(rawValues.efficiency) / 100,
+
+            weaponType: rawValues.weaponType || 'barAsym',
             rLong: parseFloat(rawValues.rLong) / 1000,
-            rShort: parseFloat(rawValues.rShort) / 1000,
+            rStart: (parseFloat(rawValues.rStart) || 0) / 1000,
+            rShort: (parseFloat(rawValues.rShort) || 0) / 1000,
+            nTeeth: parseFloat(rawValues.nTeeth) || 2,
+            wallThickness: (parseFloat(rawValues.wallThickness) || 0) / 1000,
             height: parseFloat(rawValues.height) / 1000,
             cd: parseFloat(rawValues.cd),
+
             viscousFriction: parseFloat(rawValues.viscous) || 0,
             inertia: parseFloat(rawValues.inertia) || 0
         };
@@ -339,13 +400,23 @@ function processBatchCSV(csvText) {
 
         // Inertia Auto-Est Logic (Same as runSimulation)
         if (params.inertia === 0 && massVal > 0) {
+            let estimatedInertia = 0;
             const massKg = massVal / 1000;
-            const rLong = params.rLong;
-            const rShort = params.rShort;
-            const totalLen = rLong + rShort;
-            const mLong = massKg * (rLong / totalLen);
-            const mShort = massKg * (rShort / totalLen);
-            params.inertia = (1 / 3 * mLong * Math.pow(rLong, 2)) + (1 / 3 * mShort * Math.pow(rShort, 2));
+
+            // Basic Fallback Logic for CSV if type matches
+            if (params.weaponType.includes('bar')) {
+                const rLong = params.rLong;
+                const rShort = params.rShort;
+                const totalLen = rLong + rShort;
+                const mLong = massKg * (rLong / totalLen);
+                const mShort = massKg * (rShort / totalLen);
+                estimatedInertia = (1 / 3 * mLong * Math.pow(rLong, 2)) + (1 / 3 * mShort * Math.pow(rShort, 2));
+            } else if (params.weaponType === 'drum' || params.weaponType === 'eggbeater') {
+                const r1 = params.rStart || 0;
+                const r2 = params.rLong;
+                estimatedInertia = 0.5 * massKg * (Math.pow(r1, 2) + Math.pow(r2, 2));
+            }
+            params.inertia = estimatedInertia;
         }
 
         // 2. Run Sim

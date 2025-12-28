@@ -6,7 +6,8 @@ export function simulateSpinup(params) {
     const {
         kv, voltage, resistance, escLimit, // Motor / Elec
         reduction, efficiency,             // Transmission
-        rLong, rShort, height, cd,         // Weapon Geo
+        rLong, rShort, height, cd, nTeeth, //
+        wallThickness, rStart,       // Weapon Geo
         inertia,                           // Physics
         viscousFriction = 0                // New parameter (B)
     } = params;
@@ -15,10 +16,31 @@ export function simulateSpinup(params) {
     const kt = 9.55 / kv; // Torque Constant (Nm/A)
     const rho = 1.225;    // Air Density (kg/m^3)
 
-    // Aerodynamic Constant (Ks) - Drag
-    // Ks = 1/8 * rho * Cd * h * (Rlong^4 + Rshort^4) * Kd
-    // Kd = three dimensional drag factor (1 for 2d, 0.8 for 3d)
-    const ks = (1 / 8) * rho * cd * height * (Math.pow(rLong, 4) + Math.pow(rShort, 4)) * 0.8;
+    // Aerodynamic Constant (Ks)
+    const ks = calculateKs(params.weaponType || 'barAsym', rho, cd, height, rLong, rStart || 0, rShort || 0, nTeeth || 2, wallThickness || 0);
+
+    function calculateKs(type, rho, Cd, h, Rlong, Rstart, Rshort, N, wallThickness) {
+        // Factor comum: 1/8 * rho * Cd * h
+        const factor = (1 / 8) * rho * Cd * h;
+
+        switch (type) {
+            case 'barAsym':
+                return factor * (Math.pow(Rlong, 4) + Math.pow(Rshort, 4));
+
+            case 'barSym':
+                return factor * N * Math.pow(Rlong, 4);
+
+            case 'drum':
+                return factor * N * (Math.pow(Rlong, 4) - Math.pow(Rstart, 4));
+
+            case 'eggbeater':
+                return factor * N * (Math.pow(Rlong, 4) - Math.pow(Rstart, 4));
+
+            default:
+                // Fallback to Bar Asym logic
+                return factor * (Math.pow(Rlong, 4) + Math.pow(Rshort, 4));
+        }
+    }
 
     // Motor No-Load Speed (rad/s)
     const w_motor_no_load = kv * voltage * (2 * Math.PI / 60);
@@ -35,7 +57,6 @@ export function simulateSpinup(params) {
     let w_weapon = 0;     // Weapon Angular Velocity (rad/s)
 
     // Data Accumulators (for plotting)
-    // Using simple arrays. In a large app, we might optimize.
     const timeData = [];
     const rpmData = [];
     const currentData = [];
@@ -108,5 +129,27 @@ export function simulateSpinup(params) {
             tipSpeed: finalTipSpeed.toFixed(1), // m/s
             current: steadyStateCurrent.toFixed(1)
         }
-    };
+    }
+}
+
+function calculateKs(type, rho, Cd, h, Rlong, Rstart, Rshort, N, wallThickness) {
+    // Common factor: 1/8 * rho * Cd * h * Kd (0.8 for 3D correction?)
+
+    const factor = (1 / 8) * rho * Cd * h;
+
+    switch (type) {
+        case 'barAsym':
+            return factor * (Math.pow(Rlong, 4) + Math.pow(Rshort, 4));
+
+        case 'barSym':
+            // "N = num of teeth"
+            return factor * N * Math.pow(Rlong, 4);
+
+        case 'drum':
+        case 'eggbeater':
+            return factor * N * (Math.pow(Rlong, 4) - Math.pow(Rstart, 4));
+
+        default:
+            return 0;
+    }
 }
