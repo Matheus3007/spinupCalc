@@ -41,13 +41,16 @@ const inputs = {
     viscous: document.getElementById('viscous'),
     mass: document.getElementById('mass'),
     inertia: document.getElementById('inertia'),
+    keToggle: document.getElementById('keToggle'),
+    rpmToggle: document.getElementById('rpmToggle')
 };
 
 const outputIds = {
     rpm: 'resRpmMax',
     time: 'resTime',
     tipSpeed: 'resTipSpeed',
-    current: 'resCurrent'
+    current: 'resCurrent',
+    ke: 'resKE'
 };
 
 // --- Initialization ---
@@ -91,8 +94,23 @@ function initCharts() {
         data: { datasets: [] },
         options: {
             ...commonOptions,
-            plugins: { ...commonOptions.plugins, title: { ...commonOptions.plugins.title, text: 'Spin-Up Curve (RPM)' } },
-            scales: { ...commonOptions.scales, y: { ...commonOptions.scales.y, title: { text: 'RPM' } } }
+            plugins: { ...commonOptions.plugins, title: { ...commonOptions.plugins.title, text: 'Spin-Up Curve (RPM & KE)' } },
+            scales: {
+                ...commonOptions.scales,
+                y: {
+                    ...commonOptions.scales.y,
+                    title: { display: true, text: 'RPM', color: '#FFFFFF' },
+                    position: 'left'
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    grid: { drawOnChartArea: false, color: '#333333' },
+                    ticks: { color: '#AAAAAA' },
+                    title: { display: true, text: 'Kinetic Energy (J)', color: '#FFFFFF' }
+                }
+            }
         }
     });
 
@@ -141,6 +159,31 @@ function setupEventListeners() {
     // Track if user edits the name manually
     inputs.simName.addEventListener('input', () => {
         userEditedName = true;
+    });
+
+    window.addEventListener('resize', () => {
+        if (rpmChart) rpmChart.resize();
+        if (currentChart) currentChart.resize();
+    });
+
+    inputs.keToggle.addEventListener('change', () => {
+        const showKE = inputs.keToggle.checked;
+        rpmChart.data.datasets.forEach(ds => {
+            if (ds.yAxisID === 'y1') {
+                ds.hidden = !showKE;
+            }
+        });
+        rpmChart.update();
+    });
+
+    inputs.rpmToggle.addEventListener('change', () => {
+        const showRPM = inputs.rpmToggle.checked;
+        rpmChart.data.datasets.forEach(ds => {
+            if (ds.yAxisID === 'y') {
+                ds.hidden = !showRPM;
+            }
+        });
+        rpmChart.update();
     });
 }
 
@@ -254,7 +297,10 @@ function runSimulation() {
     const color = COLORS[colorIdx % COLORS.length];
     colorIdx++;
 
-    addData(rpmChart, name, results.timeData, results.rpmData, color);
+    addData(rpmChart, name, results.timeData, results.rpmData, color, 'y', [], !inputs.rpmToggle.checked);
+    if (results.keData) {
+        addData(rpmChart, name + ' (KE)', results.timeData, results.keData, color, 'y1', [5, 5], !inputs.keToggle.checked);
+    }
     addData(currentChart, name, results.timeData, results.currentData, color);
 }
 
@@ -305,9 +351,10 @@ function updateKPIs(stats) {
     document.getElementById(outputIds.time).innerText = stats.time + 's';
     document.getElementById(outputIds.tipSpeed).innerText = stats.tipSpeed;
     document.getElementById(outputIds.current).innerText = stats.current;
+    document.getElementById(outputIds.ke).innerText = stats.ke;
 }
 
-function addData(chart, label, timeData, valueData, color) {
+function addData(chart, label, timeData, valueData, color, yAxisID = 'y', dash = [], hidden = false) {
     chart.data.datasets.push({
         label: label,
         data: timeData.map((t, i) => ({ x: t, y: valueData[i] })),
@@ -315,7 +362,10 @@ function addData(chart, label, timeData, valueData, color) {
         backgroundColor: color,
         borderWidth: 2,
         pointRadius: 0,
-        tension: 0.1
+        tension: 0.1,
+        yAxisID: yAxisID,
+        borderDash: dash,
+        hidden: hidden
     });
     chart.update();
 }
@@ -425,7 +475,10 @@ function processBatchCSV(csvText) {
         // 3. Add to Charts
         const color = COLORS[colorIdx % COLORS.length];
         colorIdx++;
-        addData(rpmChart, rawValues.simName, results.timeData, results.rpmData, color);
+        addData(rpmChart, rawValues.simName, results.timeData, results.rpmData, color, 'y', [], !inputs.rpmToggle.checked);
+        if (results.keData) {
+            addData(rpmChart, rawValues.simName + ' (KE)', results.timeData, results.keData, color, 'y1', [5, 5], !inputs.keToggle.checked);
+        }
         addData(currentChart, rawValues.simName, results.timeData, results.currentData, color);
 
         // 4. Store Result for Export (Merge Raw Inputs + KPI Outputs)

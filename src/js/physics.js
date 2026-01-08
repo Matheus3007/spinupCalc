@@ -60,6 +60,7 @@ export function simulateSpinup(params) {
     const timeData = [];
     const rpmData = [];
     const currentData = [];
+    const keData = [];
 
     // Integration Loop (Euler)
     while (t < maxTime) {
@@ -98,9 +99,12 @@ export function simulateSpinup(params) {
         // but 10ms is usually fine for Chart.js ~1500 points)
         // Let's log every 5th step (50ms resolution) to keep charts snappy
         if (t % 0.05 < dt) {
+            const rpm = w_weapon * 9.5492966;
+            const ke = 0.5 * inertia * Math.pow(w_weapon, 2);
             timeData.push(parseFloat(t.toFixed(2)));
-            rpmData.push(w_weapon * 9.5492966); // rad/s to RPM
+            rpmData.push(rpm); // rad/s to RPM
             currentData.push(t_motor_net / kt); // Motor Current (A)
+            keData.push(ke); // Kinetic Energy (J)
         }
 
         // 8. Exit Condition (Steady State)
@@ -111,6 +115,8 @@ export function simulateSpinup(params) {
     // Final Statistics
     const finalRPM = w_weapon * 9.5492966;
     const finalTipSpeed = w_weapon * rLong; // m/s
+    const finalKE = 0.5 * inertia * Math.pow(w_weapon, 2);
+
     // Current required to maintain this speed (hover current)
     // At steady state: T_applied = T_drag + T_viscous
     // T_motor * red * eff = ks*w^2 + B*w
@@ -123,11 +129,13 @@ export function simulateSpinup(params) {
         timeData,
         rpmData,
         currentData,
+        keData,
         stats: {
             rpm: Math.round(finalRPM),
             time: timeData[timeData.length - 1],
             tipSpeed: finalTipSpeed.toFixed(1), // m/s
-            current: steadyStateCurrent.toFixed(1)
+            current: steadyStateCurrent.toFixed(1),
+            ke: Math.round(finalKE)
         }
     }
 }

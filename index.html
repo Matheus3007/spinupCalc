@@ -154,6 +154,27 @@
                 </div>
             </div>
 
+            <!-- Plot Toggles -->
+            <div class="input-row" style="justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <label>Show RPM</label>
+                <div class="toggle-container">
+                    <label class="switch">
+                        <input type="checkbox" id="rpmToggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="input-row" style="justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <label>Show Kinetic Energy</label>
+                <div class="toggle-container">
+                    <label class="switch">
+                        <input type="checkbox" id="keToggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+
             <button id="btn-add">Run Simulation</button>
             <button id="btn-clear" class="secondary">Clear Charts</button>
 
@@ -194,6 +215,10 @@
                 <div class="kpi-card">
                     <div class="kpi-value" id="resCurrent">0</div>
                     <div class="kpi-label">Hover Current (A)</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-value" id="resKE">0</div>
+                    <div class="kpi-label">Max KE (J)</div>
                 </div>
             </div>
 

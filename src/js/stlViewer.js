@@ -3,6 +3,7 @@ import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
 
 let scene, camera, renderer, container;
 let mesh, edges; // The 3D object components
+let axisLine;   // The rotation axis line
 let animationId;
 
 export function init3DViewer(domElementId) {
@@ -201,6 +202,9 @@ function alignGeometryToUp(mesh, normal) {
 
     // 7. Re-Fit Camera
     fitCameraToMesh(mesh);
+
+    // 8. Update Axis Visual
+    updateAxisLine(targetAxis);
 }
 // ... (rest of file) ...
 
@@ -239,6 +243,9 @@ function loadSTLCallback(data) {
 
     // Initial Physics Calc (Default Axis Y - assumes flat import)
     calculatePhysics(geometry, currentSpinAxis);
+
+    // Initial Axis Visual
+    updateAxisLine(currentSpinAxis);
 }
 
 function calculatePhysics(geometry, axis) {
@@ -365,6 +372,24 @@ function fitCameraToMesh(mesh) {
     camera.updateProjectionMatrix();
 
     // Update OrbitControls target if we had them (we don't yet, but good practice)
+}
+
+function updateAxisLine(axis) {
+    const length = 1000;
+    const points = [
+        axis.clone().multiplyScalar(-length / 2),
+        axis.clone().multiplyScalar(length / 2)
+    ];
+
+    if (!axisLine) {
+        const geometry = new THREE.BufferGeometry().setFromPoints(points);
+        const material = new THREE.LineBasicMaterial({ color: 0xFFFF00, transparent: true, opacity: 0.6 });
+        axisLine = new THREE.Line(geometry, material);
+        scene.add(axisLine);
+    } else {
+        axisLine.geometry.setFromPoints(points);
+        axisLine.geometry.verticesNeedUpdate = true;
+    }
 }
 
 function onWindowResize() {
