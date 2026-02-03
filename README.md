@@ -37,11 +37,13 @@ The motor torque is the lesser of two limits (ESCs regulate current, but physics
 $$ \tau_{motor} = \min(\tau_{volt}, \tau_{esc}) $$
 
 ### 2. Resistive Forces
-- **Aerodynamic Drag**: Modeled as a quadratic force.
-  $$ \tau_{drag} = K_s \cdot \omega^2 $$
-  Where $K_s = \frac{1}{8} \rho C_d h (R_{long}^4 + R_{short}^4)$
-- **Viscous Friction**: Modeled as a linear drag component (bearing/belt losses).
-  $$ \tau_{viscous} = B \cdot \omega $$
+- **Aerodynamic Drag**: Modeled as a quadratic force:
+  
+$$\tau_{drag} = K_s \cdot \omega^2$$
+  
+Where: $K_s = \frac{1}{8} \rho C_d h (R_{long}^4 + R_{short}^4)$
+  
+- **Viscous Friction**: Modeled as a linear drag component (bearing/belt losses): $\tau_{viscous} = B \cdot \omega$
 
 ### 3. Net Acceleration
 The final equation of motion solved per step:
