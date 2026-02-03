@@ -45,6 +45,7 @@ $$ \tau_{motor} = \min(\tau_{volt}, \tau_{esc}) $$
 
 ### 3. Net Acceleration
 The final equation of motion solved per step:
+
 $$ I \cdot \alpha = (\tau_{motor} \cdot Ratio \cdot \eta) - \tau_{drag} - \tau_{viscous} $$
 
 Where:
